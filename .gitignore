@@ -1,5 +1,7 @@
 # Credentials and sensitive files
 credential.json
+creds.json
+*.json
 .env
 
 # Python

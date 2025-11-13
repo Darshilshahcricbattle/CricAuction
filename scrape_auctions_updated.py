@@ -380,38 +380,26 @@ class GraphExcelClient:
         r.raise_for_status()
 
 # ==============================
-# Credentials loader (robust)
+# Credentials loader - GitHub Actions only
 # ==============================
 def try_load_creds() -> dict | None:
-    # Priority 1: Environment variables (for CI/GitHub Actions)
+    """Load credentials ONLY from environment variables (GitHub Secrets)"""
     # Check for Graph/SharePoint credentials
     cid = os.getenv("CLIENT_ID")
     cs  = os.getenv("CLIENT_SECRET")
     tid = os.getenv("TENANT_ID")
     if cid and cs and tid:
-        print("Using credentials from environment (Graph).")
+        print("✓ Using SharePoint credentials from environment")
         return {"client_id": cid, "client_secret": cs, "tenant_id": tid}
     
-    # Check for CB credentials
+    # Check for CB credentials  
     email = os.getenv("CB_EMAIL")
     pwd   = os.getenv("CB_PASSWORD")
     if email and pwd:
-        print("Using credentials from environment (CB email/password).")
+        print("✓ Using CB credentials from environment")
         return {"email": email, "password": pwd}
     
-    # Priority 2: Local JSON files (for local development only)
-    for path in ("creds.json", "credential.json"):
-        if os.path.exists(path) and os.path.getsize(path) > 0:
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    print(f"Using credentials from {path}")
-                    return data
-            except json.JSONDecodeError as e:
-                print(f"Warning: invalid JSON in {path}: {e}")
-                continue
-    
-    print("No credentials available.")
+    print("⚠ No credentials found in environment variables")
     return None
 
 # ==============================
