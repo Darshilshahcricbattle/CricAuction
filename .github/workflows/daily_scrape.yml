@@ -29,6 +29,24 @@ jobs:
         with:
           chrome-version: stable
       
+      - name: Create credentials file
+        shell: bash
+        env:
+          CB_EMAIL: ${{ secrets.CB_EMAIL }}
+          CB_PASSWORD: ${{ secrets.CB_PASSWORD }}
+        run: |
+          set -e
+          # Fail fast if secrets are missing
+          [ -n "$CB_EMAIL" ] && [ -n "$CB_PASSWORD" ] || { echo "Missing CB_EMAIL/CB_PASSWORD"; exit 1; }
+          # Write a proper JSON file
+          printf '%s' "{\"email\":\"$CB_EMAIL\",\"password\":\"$CB_PASSWORD\"}" > creds.json
+          python - <<'PY'
+          import json, sys
+          with open("creds.json","r",encoding="utf-8") as f:
+              json.load(f)             # sanity check; will raise if malformed
+          print("creds.json OK")
+          PY
+      
       - name: Debug - Check environment and code version
         env:
           CLIENT_ID: ${{ secrets.CLIENT_ID }}

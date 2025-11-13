@@ -418,8 +418,16 @@ class GraphExcelClient:
 # ==============================
 # Main
 # ==============================
-def try_load_creds(path: str = "credential.json") -> dict | None:
-    # First, try to load from environment variables (for GitHub Actions / CI)
+def try_load_creds(path: str = "creds.json") -> dict | None:
+    # 1) Try JSON file if it exists and is non-empty
+    if os.path.exists(path) and os.path.getsize(path) > 0:
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"Warning: Invalid JSON in {path}: {e}")
+    
+    # 2) Fall back to environment variables (SharePoint credentials)
     client_id = os.getenv("CLIENT_ID")
     client_secret = os.getenv("CLIENT_SECRET")
     tenant_id = os.getenv("TENANT_ID")
@@ -431,27 +439,14 @@ def try_load_creds(path: str = "credential.json") -> dict | None:
             "tenant_id": tenant_id,
         }
     
-    # If any env var is set but not all, warn the user
-    if client_id or client_secret or tenant_id:
-        print("Warning: Incomplete environment credentials. Expected CLIENT_ID, CLIENT_SECRET, and TENANT_ID to all be set.")
+    # 3) Try alternative env vars (CB_EMAIL/CB_PASSWORD)
+    email = os.getenv("CB_EMAIL")
+    password = os.getenv("CB_PASSWORD")
+    if email and password:
+        return {"email": email, "password": password}
     
-    # Fall back to loading from credential.json (for local development)
-    if not os.path.exists(path):
-        return None
-    
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            content = f.read().strip()
-            if not content:
-                print(f"Warning: {path} is empty")
-                return None
-            return json.loads(content)
-    except json.JSONDecodeError as e:
-        print(f"Warning: Invalid JSON in {path}: {e}")
-        return None
-    except Exception as e:
-        print(f"Warning: Error reading {path}: {e}")
-        return None
+    # 4) No credentials found - return None for graceful fallback
+    return None
 
 def main():
     print("Scraping...")
@@ -484,7 +479,7 @@ def main():
 
     cred = try_load_creds()
     if not cred:
-        print("No credential.json found → skipping SharePoint sync.")
+        print("No credentials found → skipping SharePoint sync.")
         print("\n" + "-" * 120 + "\nDone.\n" + "-" * 120)
         return
 
