@@ -29,11 +29,11 @@ jobs:
         with:
           chrome-version: stable
       
-      - name: Create credentials file
-        run: |
-          echo '${{ secrets.CREDENTIAL_JSON }}' > credential.json
-      
       - name: Run scraper
+        env:
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+          TENANT_ID: ${{ secrets.TENANT_ID }}
         run: |
           python scrape_auctions_updated.py
       
