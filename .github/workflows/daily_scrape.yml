@@ -58,7 +58,7 @@ jobs:
       
       - name: Commit and push if changed
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git config --global user.name 'Darshilshahcricbattle'
+          git config --global user.email 'darshil@cricbattle.com'
           git add cricauction_upcoming.csv
           git diff --quiet && git diff --staged --quiet || (git commit -m "Update auction data - $(date +'%Y-%m-%d')" && git push)
