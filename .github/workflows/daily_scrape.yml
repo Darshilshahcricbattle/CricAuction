@@ -6,6 +6,10 @@ on:
     - cron: '30 3 * * *'
   workflow_dispatch: # Allows manual trigger
 
+# 👇 NEW: allow github-actions[bot] to push commits
+permissions:
+  contents: write
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
@@ -16,6 +20,7 @@ jobs:
         with:
           ref: main
           clean: true
+          persist-credentials: true   # 👈 explicit, so push uses GITHUB_TOKEN
       
       - name: Verify code version
         run: |
@@ -57,8 +62,19 @@ jobs:
           python scrape_auctions_updated.py
       
       - name: Commit and push if changed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # 👈 not strictly required but explicit
         run: |
           git config --global user.name 'Darshilshahcricbattle'
           git config --global user.email 'darshil@cricbattle.com'
+
           git add cricauction_upcoming.csv
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update auction data - $(date +'%Y-%m-%d')" && git push)
+
+          # Only commit if there are staged changes
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update auction data - $(date +'%Y-%m-%d')"
+            # use the token-backed remote set by actions/checkout
+            git push origin HEAD:${{ github.ref_name }}
+          fi
